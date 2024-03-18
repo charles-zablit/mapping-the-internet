@@ -17,7 +17,10 @@ def convert_to_csv(input_file: str, output_file: str):
         f.writelines(output)
 
 
-def convert_to_dot(input_file: str, output_file: str, limit: int = -1):
+def convert_to_dot(
+    input_file: str,
+    output_file: str,
+):
     output = ["digraph wikipedia {\n"]
     id_table = {}
 
@@ -47,5 +50,4 @@ def convert_to_dot(input_file: str, output_file: str, limit: int = -1):
 
 
 if __name__ == "__main__":
-    # convert_to_csv("wikipedia_mapper/output.json", "graph.csv")
-    convert_to_dot("wikipedia_mapper/output2.json", "graph.dot", 10000)
+    convert_to_dot("output.json", "graph.dot")
