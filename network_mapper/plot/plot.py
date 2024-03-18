@@ -1,7 +1,8 @@
 import argparse
+import csv
 import json
 import pathlib
-from typing import Dict
+from typing import Dict, Tuple
 
 import geoip2.database
 import geoip2.errors
@@ -18,7 +19,24 @@ def read_json(path: pathlib.Path) -> Dict[str, Dict[str, int]]:
         return json.load(f)
 
 
+def read_countries(path: pathlib.Path) -> Dict[str, Tuple[float, float]]:
+    res = {}
+    with open(path, "r") as f:
+        csv_reader = csv.reader(
+            f,
+            quotechar='"',
+            quoting=csv.QUOTE_ALL,
+            skipinitialspace=True,
+        )
+        for row in csv_reader:
+            if csv_reader.line_num == 1:
+                continue
+            res[row[1]] = (float(row[4]), float(row[5]))
+    return res
+
+
 def main(db_path: str, edges_path: str, targets_path: str) -> None:
+    countries = read_countries(pathlib.Path("./countries.csv"))
     path = pathlib.Path(edges_path)
     data = read_json(path)
     ip_targets = set()
@@ -38,8 +56,10 @@ def main(db_path: str, edges_path: str, targets_path: str) -> None:
     nodes = list(graph.nodes)
     for node in nodes:
         try:
-            response = reader.city(node)
-            pos[node] = (response.location.longitude, response.location.latitude)
+            response = reader.country(node)
+            (lat, lon) = countries[response.country.iso_code]
+            # pos[node] = (response.location.longitude, response.location.latitude)
+            pos[node] = (lon, lat)
         except geoip2.errors.AddressNotFoundError:
             print("Address not found")
             graph.remove_node(node)
@@ -68,7 +88,9 @@ def main(db_path: str, edges_path: str, targets_path: str) -> None:
         edge_color=weights,
         alpha=0.2,
         arrows=False,
-        edge_cmap=matplotlib.cm.viridis,
+        edge_cmap=matplotlib.cm.turbo,
+        edge_vmin=3,
+        edge_vmax=7,
     )
     m.drawcountries(linewidth=0.5)
     m.drawstates(linewidth=0.2)
